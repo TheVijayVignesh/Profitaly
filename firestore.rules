@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User profile data
+    match /users/{userId} {
+      // Allow read and write access to a user's own document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // User subdocuments and collections
+      match /trials/{trialId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      match /fantasy/{fantasyId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      match /watchlist/{stockId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      match /learningStatus/{moduleId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Social features with additional rules for friends
+    match /users/{userId}/friends/{friendId} {
+      // Allow users to read their own friends
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow users to add or remove friends (additional validation could be added)
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow users to send friend requests
+    match /friendRequests/{requestId} {
+      allow read: if request.auth != null && 
+                  (request.auth.uid == resource.data.senderId || 
+                   request.auth.uid == resource.data.receiverId);
+      
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
+      allow update, delete: if request.auth != null && 
+                           (request.auth.uid == resource.data.senderId || 
+                            request.auth.uid == resource.data.receiverId);
+    }
+    
+    // Public data (e.g., course catalog, public user profiles)
+    match /courses/{courseId} {
+      allow read: if true; // Anyone can read course information
+      allow write: if false; // Only admins can modify courses (handled in admin rules)
+    }
+    
+    // Fantasy Grounds collections
+    match /competitions/{competitionId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+                    (request.auth.uid == resource.data.createdBy || 
+                     resource.data.participants.hasAny([request.auth.uid]));
+    }
+    
+    match /portfolios/{portfolioId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    match /participants/{participantId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+      allow update: if false; // Transactions should be immutable
+    }
+    
+    // User privacy settings applied to profile visibility
+    match /users/{userId}/profile {
+      // Allow read access based on privacy settings
+      allow read: if request.auth != null && (
+                  // Owner can always read their profile
+                  request.auth.uid == userId ||
+                  // Friends can read if profile is set to friends-only
+                  (resource.data.profileVisibility == true));
+    }
+  }
+} 

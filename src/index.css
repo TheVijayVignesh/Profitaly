@@ -1,0 +1,250 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default theme variables (Tokyo Night) */
+  --theme-background: #1a1b26;
+  --theme-foreground: #c0caf5;
+  --theme-accent: #7aa2f7;
+  --theme-card: #24283b;
+  --theme-success: #9ece6a;
+  --theme-error: #f7768e;
+  --theme-warning: #e0af68;
+  --theme-border: #30374b;
+  --theme-muted: #414868;
+  --theme-mutedForeground: #565f89;
+  --theme-primary: #7aa2f7;
+  --theme-primaryForeground: #1a1b26;
+  --theme-fontFamily: 'Inter', sans-serif;
+}
+
+/* Theme preview mode */
+.theme-preview {
+  background-color: var(--preview-background, var(--theme-background));
+  color: var(--preview-foreground, var(--theme-foreground));
+}
+
+.theme-preview .card,
+.theme-preview [class*="card"] {
+  background-color: var(--preview-card, var(--theme-card));
+  border-color: var(--preview-border, var(--theme-border));
+}
+
+.theme-preview .btn-primary,
+.theme-preview [class*="btn-primary"] {
+  background-color: var(--preview-primary, var(--theme-primary));
+  color: var(--preview-primaryForeground, var(--theme-primaryForeground));
+}
+
+@layer base {
+  :root {
+    --background: var(--theme-background);
+    --foreground: var(--theme-foreground);
+    
+    --card: var(--theme-card);
+    --card-foreground: var(--theme-foreground);
+    
+    --popover: var(--theme-card);
+    --popover-foreground: var(--theme-foreground);
+    
+    --primary: var(--theme-primary);
+    --primary-foreground: var(--theme-primaryForeground);
+    
+    --secondary: var(--theme-muted);
+    --secondary-foreground: var(--theme-foreground);
+    
+    --muted: var(--theme-muted);
+    --muted-foreground: var(--theme-mutedForeground);
+    
+    --accent: var(--theme-accent);
+    --accent-foreground: var(--theme-foreground);
+    
+    --destructive: var(--theme-error);
+    --destructive-foreground: var(--theme-foreground);
+
+    --success: var(--theme-success);
+    --warning: var(--theme-warning);
+    --error: var(--theme-error);
+    
+    --border: var(--theme-border);
+    --input: var(--theme-border);
+    
+    --ring: var(--theme-primary);
+    
+    --radius: 0.5rem;
+
+    /* Sidebar colors */
+    --sidebar-background: 215 50% 15%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 205 85% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 50% 20%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 215 50% 25%;
+    --sidebar-ring: 205 85% 50%;
+  }
+
+  .dark {
+    --background: 215 50% 8%;
+    --foreground: 210 20% 90%;
+
+    --card: 215 50% 12%;
+    --card-foreground: 210 20% 90%;
+
+    --popover: 215 50% 10%;
+    --popover-foreground: 210 20% 90%;
+
+    --primary: 205 85% 50%;
+    --primary-foreground: 210 20% 98%;
+
+    --secondary: 215 50% 18%;
+    --secondary-foreground: 210 20% 90%;
+
+    --muted: 215 50% 16%;
+    --muted-foreground: 210 20% 60%;
+
+    --accent: 215 50% 18%;
+    --accent-foreground: 210 20% 90%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 215 50% 20%;
+    --input: 215 50% 20%;
+    --ring: 205 85% 60%;
+
+    /* Sidebar colors - darker in dark mode */
+    --sidebar-background: 215 50% 5%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 205 85% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 50% 10%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 215 50% 15%;
+    --sidebar-ring: 205 85% 50%;
+  }
+
+  /* Global reset to enforce theme styles with high specificity */
+  *, *:before, *:after {
+    @apply border-border;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: transparent;
+    border-color: var(--theme-border) !important;
+  }
+  
+  html, body {
+    @apply bg-background text-foreground;
+    font-family: var(--theme-fontFamily) !important;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background-color: var(--theme-background) !important;
+  }
+  
+  h1 {
+    @apply text-4xl font-bold tracking-tight;
+  }
+  
+  h2 {
+    @apply text-3xl font-semibold tracking-tight;
+  }
+  
+  h3 {
+    @apply text-2xl font-semibold;
+  }
+
+  /* Override Tailwind classes to respect theme */
+  [class*='bg-'], [class*='text-'], [class*='border-'] {
+    background-color: var(--theme-background) !important;
+    color: var(--theme-foreground) !important;
+    border-color: var(--theme-border) !important;
+  }
+
+  /* Additional enforcement for text elements to ensure font color */
+  p, span, div, a, button, input, textarea, select, option, label, h1, h2, h3, h4, h5, h6, li, th, td {
+    color: var(--theme-foreground) !important;
+  }
+
+  /* Theme-specific overrides using theme classes with high specificity */
+  html.theme-tokyo-night, html.theme-tokyo-night * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-dracula, html.theme-dracula * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-monokai, html.theme-monokai * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-one-dark-pro, html.theme-one-dark-pro * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-github-dark, html.theme-github-dark * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-github-light, html.theme-github-light * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-solarized-light, html.theme-solarized-light * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-solarized-dark, html.theme-solarized-dark * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-night-owl, html.theme-night-owl * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+  html.theme-synthwave, html.theme-synthwave * {
+    font-family: var(--theme-fontFamily) !important;
+    color: var(--theme-foreground) !important;
+    background-color: var(--theme-background) !important;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/10 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-2xl shadow-lg;
+  }
+  
+  .profit-text {
+    @apply text-finance-profit font-medium;
+  }
+  
+  .loss-text {
+    @apply text-finance-loss font-medium;
+  }
+  
+  .animated-gradient-button {
+    @apply relative overflow-hidden bg-gradient-to-r from-finance-blue to-finance-accent text-white rounded-lg px-6 py-3 font-medium 
+    before:absolute before:inset-0 before:bg-gradient-to-r before:from-finance-accent before:to-finance-blue before:opacity-0 
+    hover:before:opacity-100 before:transition-opacity before:duration-500 before:-z-10;
+  }
+  
+  .data-card {
+    @apply rounded-xl p-4 bg-white dark:bg-finance-dark border border-border transition-all duration-300 
+    hover:shadow-md dark:hover:shadow-none dark:hover:border-finance-blue/30;
+  }
+}

@@ -104,7 +104,7 @@ const StockDetailView = ({ stock, onBack }: StockDetailViewProps) => {
         
         // Determine the date range based on timeframe
         const now = new Date();
-        let startDate = new Date();
+        const startDate = new Date();
         
         if (timeframe === '1m') {
           startDate.setMonth(now.getMonth() - 1);

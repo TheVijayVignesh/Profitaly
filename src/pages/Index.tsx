@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 import { marketIndices } from "@/services/mockData";
-import { LoginDialog } from "@/components/LoginDialog";
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
   <div className="glass-card p-6 transition-all hover:shadow-lg hover:border-finance-blue/30">
@@ -61,7 +60,9 @@ const Index = () => {
               </p>
               
               <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                <LoginDialog />
+                <Button asChild>
+                  <Link to="/dashboard">Get Started</Link>
+                </Button>
                 <Button variant="outline" className="group">
                   Learn More <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -159,7 +160,9 @@ const Index = () => {
                       <div className="text-sm">Support</div>
                     </div>
                   </div>
-                  <LoginDialog />
+                  <Button asChild>
+                    <Link to="/dashboard">Get Started</Link>
+                  </Button>
                 </div>
               </div>
             </div>

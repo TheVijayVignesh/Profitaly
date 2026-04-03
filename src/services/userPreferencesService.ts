@@ -1,5 +1,5 @@
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+// Authentication removed - using localStorage
+// Authentication removed - using localStorage
 import { smartAdvisorService, AdvisorRequest, UserInvestmentProfile, MarketType } from "./smartAdvisorService";
 import { perplexityService } from "./perplexityService";
 
@@ -151,6 +151,18 @@ Format the response as JSON with the following structure:
 
 // Get user preferences from Firestore
 export const getUserPreferences = async (): Promise<InvestmentPreferences | null> => {
+  try {
+    // Get preferences from localStorage instead of Firebase
+    const preferencesJson = localStorage.getItem("userPreferences");
+    if (preferencesJson) {
+      return JSON.parse(preferencesJson) as InvestmentPreferences;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting user preferences:", error);
+    return null;
+  }
+};
   try {
     const auth = getAuth();
     const userId = auth.currentUser?.uid;

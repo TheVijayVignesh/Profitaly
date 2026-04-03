@@ -13,7 +13,7 @@ const CACHE_EXPIRY = 60000; // 1 minute
 export const fetchStocksByMarket = async (marketRegion: MarketRegion): Promise<Stock[]> => {
   try {
     // Different endpoints based on market region
-    let endpoint = '';
+    const endpoint = '';
     let symbols: string[] = [];
     
     switch (marketRegion) {

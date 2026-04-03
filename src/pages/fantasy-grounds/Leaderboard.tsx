@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { auth, db } from '@/firebase/config';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';

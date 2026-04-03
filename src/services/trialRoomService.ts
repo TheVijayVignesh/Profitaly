@@ -1,5 +1,13 @@
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
+import { 
+  getPortfolios, 
+  createPortfolio, 
+  getHoldings, 
+  upsertHolding, 
+  getTransactions, 
+  addTransaction,
+  updatePortfolio 
+} from "./dbService";
 import { twelveDataService } from "./twelveDataService";
 import { finnhubService } from "./finnhubService";
 
@@ -63,20 +71,48 @@ class TrialRoomService {
         return MOCK_TRIAL_ROOM_DATA;
       }
 
-      const user = auth.currentUser;
+      // Authentication removed - using demo user
+const user = { uid: "demo-user-123" };
       if (!user) {
         console.error("No authenticated user found");
         return null;
       }
 
-      const trialRoomRef = doc(db, "users", user.uid, "trial_room", "data");
-      const trialRoomDoc = await getDoc(trialRoomRef);
-
-      if (trialRoomDoc.exists()) {
-        return trialRoomDoc.data() as TrialRoomData;
+      // Get user portfolios and look for trial room portfolio
+      const portfolios = await getPortfolios(user.uid);
+      const trialPortfolio = portfolios.find(p => p.name === "Trial Room");
+      
+      if (!trialPortfolio) {
+        return null;
       }
 
-      return null;
+      // Get holdings and transactions for this portfolio
+      const holdings = await getHoldings(trialPortfolio.id);
+      const transactions = await getTransactions(user.uid, trialPortfolio.id);
+
+      // Convert to the expected format
+      return {
+        market: (trialPortfolio.name.includes("NSE") || trialPortfolio.name.includes("BSE")) ? "NSE" : "NYSE",
+        wallet: parseFloat(trialPortfolio.cashBalance),
+        cash_left: parseFloat(trialPortfolio.cashBalance),
+        holdings: holdings.map(h => ({
+          symbol: h.symbol,
+          name: h.companyName || h.symbol,
+          quantity: parseFloat(h.quantity),
+          avg_price: parseFloat(h.averageCost),
+          exchange: h.exchange || "NSE"
+        })),
+        transactions: transactions.map(t => ({
+          id: t.id,
+          type: t.type.toLowerCase() as "buy" | "sell",
+          symbol: t.symbol,
+          name: t.symbol, // We don't have company name in transactions
+          quantity: parseFloat(t.quantity),
+          price: parseFloat(t.price),
+          total: parseFloat(t.total),
+          timestamp: t.executedAt
+        }))
+      };
     } catch (error) {
       console.error("Error fetching trial room data:", error);
       return null;
@@ -106,7 +142,8 @@ class TrialRoomService {
         return mockData;
       }
 
-      const user = auth.currentUser;
+      // Authentication removed - using demo user
+const user = { uid: "demo-user-123" };
       if (!user) {
         throw new Error("No authenticated user found");
       }
@@ -117,12 +154,15 @@ class TrialRoomService {
         cash_left: wallet,
         holdings: [],
         transactions: [],
-        created_at: serverTimestamp(),
-        last_updated: serverTimestamp()
+        created_at: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       };
 
-      const trialRoomRef = doc(db, "users", user.uid, "trial_room", "data");
-      await setDoc(trialRoomRef, trialRoomData);
+      // Create a new portfolio for the trial room
+      const portfolio = await createPortfolio(user.uid, {
+        name: `Trial Room - ${market}`,
+        cashBalance: wallet.toString()
+      });
 
       return {
         ...trialRoomData,
@@ -212,7 +252,7 @@ class TrialRoomService {
           cash_left: newCashLeft,
           holdings: updatedHoldings,
           transactions: [transaction, ...MOCK_TRIAL_ROOM_DATA!.transactions],
-          last_updated: serverTimestamp()
+          last_updated: new Date().toISOString()
         };
         
         MOCK_TRIAL_ROOM_DATA = {
@@ -224,91 +264,74 @@ class TrialRoomService {
         return MOCK_TRIAL_ROOM_DATA;
       }
 
-      const user = auth.currentUser;
+      // Authentication removed - using demo user
+const user = { uid: "demo-user-123" };
       if (!user) {
         throw new Error("No authenticated user found");
       }
 
-      // Get current trial room data
-      const trialRoomRef = doc(db, "users", user.uid, "trial_room", "data");
-      const trialRoomDoc = await getDoc(trialRoomRef);
-
-      if (!trialRoomDoc.exists()) {
+      // Get trial room portfolio
+      const portfolios = await getPortfolios(user.uid);
+      const trialPortfolio = portfolios.find(p => p.name.includes("Trial Room"));
+      
+      if (!trialPortfolio) {
         throw new Error("Trial room not found");
       }
 
-      const trialRoomData = trialRoomDoc.data() as TrialRoomData;
       const totalCost = price * quantity;
 
       // Check if user has enough cash
-      if (trialRoomData.cash_left < totalCost) {
+      if (parseFloat(trialPortfolio.cashBalance) < totalCost) {
         throw new Error("Insufficient funds");
       }
 
-      // Update cash balance
-      const newCashLeft = trialRoomData.cash_left - totalCost;
+      // Get current holdings
+      const holdings = await getHoldings(trialPortfolio.id);
+      const existingHolding = holdings.find(h => h.symbol === symbol);
 
-      // Update holdings
-      const existingHolding = trialRoomData.holdings.find(h => h.symbol === symbol);
-      let updatedHoldings;
+      // Calculate new average cost if holding exists
+      let newAverageCost = price;
+      let newQuantity = quantity;
 
       if (existingHolding) {
-        // Update existing holding
-        const totalShares = existingHolding.quantity + quantity;
-        const totalCostBasis = (existingHolding.quantity * existingHolding.avg_price) + totalCost;
-        const newAvgPrice = totalCostBasis / totalShares;
-
-        updatedHoldings = trialRoomData.holdings.map(h => {
-          if (h.symbol === symbol) {
-            return {
-              ...h,
-              quantity: totalShares,
-              avg_price: newAvgPrice
-            };
-          }
-          return h;
-        });
-      } else {
-        // Add new holding
-        updatedHoldings = [
-          ...trialRoomData.holdings,
-          {
-            symbol,
-            name,
-            quantity,
-            avg_price: price,
-            exchange
-          }
-        ];
+        const currentQuantity = parseFloat(existingHolding.quantity);
+        const currentCost = parseFloat(existingHolding.averageCost);
+        const totalShares = currentQuantity + quantity;
+        const totalCostBasis = (currentQuantity * currentCost) + totalCost;
+        newAverageCost = totalCostBasis / totalShares;
+        newQuantity = totalShares;
       }
 
-      // Create transaction record
-      const transaction: Transaction = {
-        id: Date.now().toString(),
-        type: "buy",
+      // Update or create holding
+      await upsertHolding({
+        portfolioId: trialPortfolio.id,
+        userId: user.uid,
         symbol,
-        name,
-        quantity,
-        price,
-        total: totalCost,
-        timestamp: new Date().toISOString()
-      };
+        companyName: name,
+        quantity: newQuantity.toString(),
+        averageCost: newAverageCost.toString(),
+        exchange
+      });
 
-      // Update Firestore
-      const updatedData = {
-        cash_left: newCashLeft,
-        holdings: updatedHoldings,
-        transactions: [transaction, ...trialRoomData.transactions],
-        last_updated: serverTimestamp()
-      };
+      // Add transaction
+      await addTransaction({
+        portfolioId: trialPortfolio.id,
+        symbol,
+        type: "BUY",
+        quantity: quantity.toString(),
+        price: price.toString(),
+        total: totalCost.toString(),
+        exchange
+      });
 
-      await updateDoc(trialRoomRef, updatedData);
+      // Update portfolio cash balance
+      const newCashBalance = parseFloat(trialPortfolio.cashBalance) - totalCost;
+      await updatePortfolio(trialPortfolio.id, {
+        cashBalance: newCashBalance.toString()
+      });
 
-      return {
-        ...trialRoomData,
-        ...updatedData,
-        last_updated: new Date().toISOString()
-      };
+      // Return updated trial room data
+      return await this.getUserTrialRoom();
     } catch (error) {
       console.error("Error buying stock:", error);
       throw error;
@@ -385,7 +408,7 @@ class TrialRoomService {
           cash_left: newCashLeft,
           holdings: updatedHoldings,
           transactions: [transaction, ...MOCK_TRIAL_ROOM_DATA!.transactions],
-          last_updated: serverTimestamp()
+          last_updated: new Date().toISOString()
         };
         
         MOCK_TRIAL_ROOM_DATA = {
@@ -397,84 +420,69 @@ class TrialRoomService {
         return MOCK_TRIAL_ROOM_DATA;
       }
 
-      const user = auth.currentUser;
+      // Authentication removed - using demo user
+const user = { uid: "demo-user-123" };
       if (!user) {
         throw new Error("No authenticated user found");
       }
 
-      // Get current trial room data
-      const trialRoomRef = doc(db, "users", user.uid, "trial_room", "data");
-      const trialRoomDoc = await getDoc(trialRoomRef);
-
-      if (!trialRoomDoc.exists()) {
+      // Get trial room portfolio
+      const portfolios = await getPortfolios(user.uid);
+      const trialPortfolio = portfolios.find(p => p.name.includes("Trial Room"));
+      
+      if (!trialPortfolio) {
         throw new Error("Trial room not found");
       }
 
-      const trialRoomData = trialRoomDoc.data() as TrialRoomData;
-      
-      // Find the holding
-      const existingHolding = trialRoomData.holdings.find(h => h.symbol === symbol);
+      // Get current holdings
+      const holdings = await getHoldings(trialPortfolio.id);
+      const existingHolding = holdings.find(h => h.symbol === symbol);
       
       if (!existingHolding) {
         throw new Error("You don't own any shares of this stock");
       }
 
-      if (existingHolding.quantity < quantity) {
-        throw new Error(`You only have ${existingHolding.quantity} shares to sell`);
+      const currentQuantity = parseFloat(existingHolding.quantity);
+      if (currentQuantity < quantity) {
+        throw new Error(`You only have ${currentQuantity} shares to sell`);
       }
 
-      // Calculate sale amount
       const saleAmount = price * quantity;
-      
-      // Update cash balance
-      const newCashLeft = trialRoomData.cash_left + saleAmount;
+      const newCashBalance = parseFloat(trialPortfolio.cashBalance) + saleAmount;
 
-      // Update holdings
-      let updatedHoldings;
-      
-      if (existingHolding.quantity === quantity) {
-        // Remove holding completely
-        updatedHoldings = trialRoomData.holdings.filter(h => h.symbol !== symbol);
-      } else {
-        // Reduce quantity (avg price remains the same)
-        updatedHoldings = trialRoomData.holdings.map(h => {
-          if (h.symbol === symbol) {
-            return {
-              ...h,
-              quantity: h.quantity - quantity
-            };
-          }
-          return h;
+      // Update holding quantity or remove if all shares are sold
+      const newQuantity = currentQuantity - quantity;
+      if (newQuantity > 0) {
+        await upsertHolding({
+          portfolioId: trialPortfolio.id,
+          userId: user.uid,
+          symbol,
+          companyName: name,
+          quantity: newQuantity.toString(),
+          averageCost: existingHolding.averageCost,
+          exchange: existingHolding.exchange || "NSE"
         });
       }
+      // Note: We would need a deleteHolding function to completely remove holdings
 
-      // Create transaction record
-      const transaction: Transaction = {
-        id: Date.now().toString(),
-        type: "sell",
+      // Add transaction
+      await addTransaction({
+        portfolioId: trialPortfolio.id,
         symbol,
-        name,
-        quantity,
-        price,
-        total: saleAmount,
-        timestamp: new Date().toISOString()
-      };
+        type: "SELL",
+        quantity: quantity.toString(),
+        price: price.toString(),
+        total: saleAmount.toString(),
+        exchange: existingHolding.exchange || "NSE"
+      });
 
-      // Update Firestore
-      const updatedData = {
-        cash_left: newCashLeft,
-        holdings: updatedHoldings,
-        transactions: [transaction, ...trialRoomData.transactions],
-        last_updated: serverTimestamp()
-      };
+      // Update portfolio cash balance
+      await updatePortfolio(trialPortfolio.id, {
+        cashBalance: newCashBalance.toString()
+      });
 
-      await updateDoc(trialRoomRef, updatedData);
-
-      return {
-        ...trialRoomData,
-        ...updatedData,
-        last_updated: new Date().toISOString()
-      };
+      // Return updated trial room data
+      return await this.getUserTrialRoom();
     } catch (error) {
       console.error("Error selling stock:", error);
       throw error;

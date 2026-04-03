@@ -247,4 +247,41 @@
     @apply rounded-xl p-4 bg-white dark:bg-finance-dark border border-border transition-all duration-300 
     hover:shadow-md dark:hover:shadow-none dark:hover:border-finance-blue/30;
   }
+
+  /* Finance theme colors */
+  .text-finance-blue {
+    color: #3498DB;
+  }
+  
+  .text-finance-dark {
+    color: #1A2238;
+  }
+  
+  .text-finance-accent {
+    color: #00C8C8;
+  }
+  
+  .text-finance-profit {
+    color: #9ece6a;
+  }
+  
+  .text-finance-loss {
+    color: #f7768e;
+  }
+  
+  .bg-finance-blue {
+    background-color: #3498DB;
+  }
+  
+  .bg-finance-dark {
+    background-color: #1A2238;
+  }
+  
+  .bg-finance-accent {
+    background-color: #00C8C8;
+  }
+  
+  .border-finance-blue {
+    border-color: #3498DB;
+  }
 }

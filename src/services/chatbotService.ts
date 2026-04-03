@@ -7,6 +7,15 @@ import { finnhubService } from "./finnhubService";
 // Perplexity API key from environment variable
 const PERPLEXITY_API_KEY = import.meta.env.VITE_PERPLEXITY_API_KEY || '';
 
+interface UserData {
+  holdings?: Array<{
+    quantity: number;
+    avg_price: number;
+  }>;
+  cash_left?: number;
+  total_value?: number;
+}
+
 /**
  * Enhanced Chatbot Service
  * Provides a more conversational and helpful chatbot experience
@@ -35,7 +44,7 @@ class ChatbotService {
    * @param message User's message
    * @param userData User's trial room data (if available)
    */
-  async processMessage(message: string, userData?: any) {
+  async processMessage(message: string, userData?: UserData) {
     try {
       // Check if we're asking about a specific stock
       const stockSymbolMatch = message.match(/\b[A-Z]{1,5}\b/g);
@@ -137,7 +146,7 @@ class ChatbotService {
   /**
    * Generate a response about the user's portfolio
    */
-  private async generatePortfolioResponse(userData: any) {
+  private async generatePortfolioResponse(userData: UserData) {
     if (!userData || !userData.holdings || userData.holdings.length === 0) {
       return "I don't see any holdings in your portfolio yet. Would you like to search for stocks to start building your portfolio?";
     }

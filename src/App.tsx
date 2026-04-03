@@ -4,11 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
-import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useState, useEffect } from "react";
-import RequireAuth from "./components/RequireAuth";
-import { Chatbot } from "./features/ai-chatbot";
+import Chatbot from "./features/ai-chatbot";
 
 // Pages
 import Index from "./pages/Index";
@@ -22,27 +20,39 @@ import ProfilePage from "./pages/Profile";
 import Settings from "./pages/Settings";
 
 // Import Fantasy Grounds routes
-import { fantasyGroundsRoutes } from "./routes/fantasy-grounds-routes";
 
 const queryClient = new QueryClient();
 
 // Error fallback component
 const ErrorFallback = ({ error }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-red-50 dark:bg-red-900/20">
-      <div className="max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Something went wrong</h2>
-        <div className="bg-red-100 dark:bg-red-900/50 p-4 rounded-md mb-4">
-          <p className="font-mono text-sm">{error.message}</p>
-        </div>
-        <p className="mb-4">Please try refreshing the page or contact support if the problem persists.</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Refresh Page
-        </button>
+    <div style={{ 
+      padding: '20px', 
+      margin: '20px', 
+      border: '1px solid #f5c6cb',
+      borderRadius: '5px',
+      backgroundColor: '#f8d7da', 
+      color: '#721c24',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <h2>Something went wrong</h2>
+      <div style={{ background: '#f1f5f9', padding: '10px', margin: '10px 0', borderRadius: '4px' }}>
+        <p style={{ fontFamily: 'monospace', fontSize: '12px' }}>{error?.message || 'Unknown error'}</p>
       </div>
+      <p>Please try refreshing the page.</p>
+      <button 
+        onClick={() => window.location.reload()} 
+        style={{ 
+          padding: '8px 16px', 
+          backgroundColor: '#0d6efd', 
+          color: 'white', 
+          border: 'none', 
+          borderRadius: '4px', 
+          cursor: 'pointer' 
+        }}
+      >
+        Refresh Page
+      </button>
     </div>
   );
 };
@@ -56,7 +66,6 @@ const App = () => {
     const errorHandler = (event) => {
       console.error("Global error:", event.error);
       setError(event.error);
-      // Prevent the default browser error overlay
       event.preventDefault();
     };
 
@@ -75,8 +84,7 @@ const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-          <ThemeProvider>
+        <ThemeProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -89,16 +97,14 @@ const App = () => {
               <Route index element={<Index />} />
             </Route>
 
-                {/* Protected Dashboard Routes with Sidebar */}
+                {/* All routes now accessible without authentication */}
                 <Route 
                   path="/" 
                   element={
-                    <RequireAuth>
                       <>
                         <Layout withSidebar={true} />
                         <Chatbot />
                       </>
-                    </RequireAuth>
                   }
                 >
               <Route path="/dashboard" element={<Dashboard />} />
@@ -107,16 +113,6 @@ const App = () => {
               <Route path="/trial-room" element={<TrialRoom />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/settings" element={<Settings />} />
-                  
-                  {/* Fantasy Grounds Routes */}
-                  {fantasyGroundsRoutes.map((route) => (
-                    <Route 
-                      key={route.path} 
-                      path={route.path} 
-                      element={route.element} 
-                    />
-                  ))}
-                  
               {/* Other dashboard routes will go here */}
             </Route>
             
@@ -125,7 +121,6 @@ const App = () => {
           </Routes>
         </BrowserRouter>
           </ThemeProvider>
-      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

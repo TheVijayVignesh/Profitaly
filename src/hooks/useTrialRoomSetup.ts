@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { trialRoomService, Market, TrialRoomData } from "@/services/trialRoomService";
 import { finnhubService } from "@/services/finnhubService";
 import { twelveDataService } from "@/services/twelveDataService";
@@ -26,7 +25,7 @@ export function useTrialRoomSetup() {
   const [hasExistingRoom, setHasExistingRoom] = useState<boolean>(false);
   const [existingRoomData, setExistingRoomData] = useState<TrialRoomData | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  // Authentication removed - using localStorage for demo
 
   // Check if user already has a trial room
   useEffect(() => {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { trialRoomService, TrialRoomData, StockHolding, Transaction } from "@/services/trialRoomService";
 import { availableMarkets } from "./useTrialRoomSetup";
 
@@ -27,7 +26,7 @@ export function useTrialRoomTrade() {
   const [filteredStocks, setFilteredStocks] = useState<Stock[]>([]);
 
   const { toast } = useToast();
-  const { user } = useAuth();
+  // Authentication removed - using mock user
 
   // Load trial room data
   useEffect(() => {

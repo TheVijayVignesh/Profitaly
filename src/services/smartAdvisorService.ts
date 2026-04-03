@@ -1,8 +1,9 @@
 import { perplexityService } from './perplexityService';
 import { finnhubService } from './finnhubService';
 import { twelveDataService } from './twelveDataService';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getUserProfile, upsertUserProfile } from './dbService';
 import { getAuth } from 'firebase/auth';
+// Authentication removed - using localStorage
 
 /**
  * User risk profile types
@@ -218,14 +219,13 @@ class SmartAdvisorService {
         return false;
       }
       
-      const db = getFirestore();
-      const userRef = doc(db, 'userProfiles', user.uid);
-      
       // Add timestamp
       profile.lastUpdated = Date.now();
       
-      // Save to Firestore
-      await setDoc(userRef, { investmentProfile: profile }, { merge: true });
+      // Save to PostgreSQL via API
+      await upsertUserProfile(user.uid, {
+        investmentProfile: profile
+      });
       
       return true;
     } catch (error) {
@@ -247,12 +247,10 @@ class SmartAdvisorService {
         return null;
       }
       
-      const db = getFirestore();
-      const userRef = doc(db, 'userProfiles', user.uid);
-      const userDoc = await getDoc(userRef);
+      const userProfile = await getUserProfile(user.uid);
       
-      if (userDoc.exists() && userDoc.data().investmentProfile) {
-        return userDoc.data().investmentProfile as UserInvestmentProfile;
+      if (userProfile && userProfile.investmentProfile) {
+        return userProfile.investmentProfile as UserInvestmentProfile;
       }
       
       return null;

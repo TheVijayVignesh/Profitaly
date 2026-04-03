@@ -9,8 +9,7 @@ import {
   sendEmailVerification
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { upsertUserProfile } from './dbService';
 
 // Mock user for demo purposes
 const MOCK_USER = {
@@ -124,14 +123,16 @@ class AuthService {
         success: true,
         error: null
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during login';
+      const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'auth/unknown';
       return {
         user: null,
         success: false,
         error: {
-          code: error.code || 'auth/unknown',
-          message: error.message || 'An error occurred during login'
+          code: errorCode,
+          message: errorMessage
         }
       };
     }
@@ -192,8 +193,8 @@ class AuthService {
       // Create a user profile in Firestore
       if (result.user) {
         try {
-          // Store user data in Firestore
-          await setDoc(doc(db, 'users', result.user.uid), {
+          // Store user data in PostgreSQL via API
+          await upsertUserProfile(result.user.uid, {
             email: result.user.email,
             displayName: displayName || email.split('@')[0],
             createdAt: new Date().toISOString(),
@@ -212,14 +213,16 @@ class AuthService {
         success: true,
         error: null
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Signup error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during signup';
+      const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'auth/unknown';
       return {
         user: null,
         success: false,
         error: {
-          code: error.code || 'auth/unknown',
-          message: error.message || 'An error occurred during signup'
+          code: errorCode,
+          message: errorMessage
         }
       };
     }
@@ -276,28 +279,18 @@ class AuthService {
       // This gives you a Google Access Token
       const credential = GoogleAuthProvider.credentialFromResult(result);
       
-      // Create or update user profile in Firestore
+      // Create or update user profile in PostgreSQL via API
       if (result.user) {
         try {
-          const userDocRef = doc(db, 'users', result.user.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          if (!userDoc.exists()) {
-            // First-time Google sign-in, create profile
-            await setDoc(userDocRef, {
-              email: result.user.email,
-              displayName: result.user.displayName,
-              photoURL: result.user.photoURL,
-              createdAt: new Date().toISOString(),
-              lastLogin: new Date().toISOString(),
-              provider: 'google'
-            });
-          } else {
-            // Existing user, update last login
-            await setDoc(userDocRef, {
-              lastLogin: new Date().toISOString()
-            }, { merge: true });
-          }
+          // Always upsert the user profile
+          await upsertUserProfile(result.user.uid, {
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoUrl: result.user.photoURL,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+            provider: 'google'
+          });
         } catch (profileError) {
           console.error('Error updating user profile:', profileError);
         }
@@ -309,15 +302,17 @@ class AuthService {
         success: true,
         error: null
       };
-    } catch (error: any) {
-      console.error('Google sign-in failed:', error.code, error.message);
+    } catch (error: unknown) {
+      console.error('Google sign-in failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during Google sign-in';
+      const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'auth/unknown';
       return {
         user: null,
         credential: null,
         success: false,
         error: {
-          code: error.code || 'auth/unknown',
-          message: error.message || 'An error occurred during Google sign-in'
+          code: errorCode,
+          message: errorMessage
         }
       };
     }

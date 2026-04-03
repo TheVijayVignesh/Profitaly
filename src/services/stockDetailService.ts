@@ -453,8 +453,8 @@ class StockDetailService {
     let recentPerformance = '';
     let sector = '';
     let rationale = '';
-    let keyMetrics: Record<string, string> = {};
-    let analysis = text;
+    const keyMetrics: Record<string, string> = {};
+    const analysis = text;
     
     // Try to extract overview - first paragraph
     const paragraphs = text.split(/\n\n+/);

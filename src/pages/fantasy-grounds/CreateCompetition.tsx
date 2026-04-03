@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '@/firebase/config';
+import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';

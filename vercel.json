@@ -6,15 +6,6 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "VITE_FIREBASE_API_KEY": "@vite_firebase_api_key",
-    "VITE_FIREBASE_AUTH_DOMAIN": "@vite_firebase_auth_domain",
-    "VITE_FIREBASE_PROJECT_ID": "@vite_firebase_project_id",
-    "VITE_TWELVEDATA_API_KEY": "@vite_twelvedata_api_key",
-    "VITE_FINNHUB_API_KEY": "@vite_finnhub_api_key",
-    "VITE_NEWSAPI_KEY": "@vite_newsapi_key",
-    "VITE_PERPLEXITY_API_KEY": "@vite_perplexity_api_key"
-  }
+  ]
+  
 }
